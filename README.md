@@ -8,13 +8,11 @@ Credit goes to @devshorts (https://github.com/devshorts) for reviewing and sugge
 How to Use
 ===============
 
-1. Create a script to call the precommit executeable.
+- Create a script to call the precommit executeable.
 
-**PreCommitHook.cmd**
+	**PreCommitHook.cmd**
 
-	/path/to/PreCommitNoTabs.exe
+		/path/to/PreCommitNoTabs.exe
 	
-2. Add the script to the repos' hooks folder
-
-That's it!
+- Add the script to the repos' hooks folder
 	

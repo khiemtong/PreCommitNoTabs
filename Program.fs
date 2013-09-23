@@ -63,10 +63,9 @@ let main(args) =
     let found = filePaths 
                         |> Seq.map createChangeRecord 
                         |> Seq.filter (fun change -> hasChanged change && isValidFile change) 
-                        |> Seq.choose (fun change -> if changeHasTabs change then Some(change.FileName) else None)
-
+                        |> Seq.choose (fun change -> if changeHasTabs change then Some(change.FileName) else None) 
+                        |> Seq.toList
     
-
     if not <| Seq.isEmpty found then
         eprintfn "%s" "Change set has files with tabs:\r\n"
 

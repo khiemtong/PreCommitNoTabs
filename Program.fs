@@ -38,7 +38,8 @@ let tab = (=) '\t'
 
 let leadingWhiteSpaceHas predicate (str:string) = Seq.takeWhile Char.IsWhiteSpace str |> Seq.exists predicate
 
-let getFileContents transaction repoPath filePath = launchProcess <| sprintf "cat -t %s %s %s" transaction repoPath filePath
+let getFileContents transaction repoPath filePath = 
+    launchProcess <| sprintf "cat -t %s %s %s" transaction repoPath filePath |> split '\r'
 
 let createChangeRecord line:Change = 
      match line with
@@ -58,7 +59,9 @@ let main(args) =
     
     let hasChanged (t:Change) = t.SvnCode <> NoChange
     let isValidFile (t:Change) = [".cs";".as"] |> List.exists (fun ext -> t.FileName.EndsWith(ext))
-    let changeHasTabs change = getFileContents transaction repoPath change.FileName |> leadingWhiteSpaceHas tab        
+    let changeHasTabs change = 
+        getFileContents transaction repoPath change.FileName 
+        |> Seq.exists(leadingWhiteSpaceHas tab)
 
     let found = filePaths 
                         |> Seq.map createChangeRecord 

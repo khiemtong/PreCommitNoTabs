@@ -12,7 +12,11 @@ How to Use
 
 	**PreCommitHook.cmd**
 
-		/path/to/PreCommitNoTabs.exe
+		/path/to/PreCommitNoTabs.exe %1 %2 ".cs;.cpp"
+		
+Where %1 is the repo path and %2 is the transactionId, this is passed in by SVN.
+
+The last argument is the list of extensions for files we want to check.
 	
 - Add the script to the repos' hooks folder
 	

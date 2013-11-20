@@ -38,8 +38,7 @@ let tab = (=) '\t'
 
 let leadingWhiteSpaceHas predicate (str:string) = Seq.takeWhile Char.IsWhiteSpace str |> Seq.exists predicate
 
-let getFileContents transaction repoPath filePath = 
-    launchProcess <| sprintf "cat -t %s %s %s" transaction repoPath filePath |> split '\r'
+let getFileContents transaction repoPath filePath = launchProcess <| sprintf "cat -t %s %s %s" transaction repoPath filePath
 
 let createChangeRecord line:Change = 
      match line with
@@ -49,32 +48,42 @@ let createChangeRecord line:Change =
 let printFileName fileName = eprintfn "%s" fileName
 
 [<EntryPoint>]
-let main(args) = 
-
-    let repoPath = args.[0]
-    let transaction = args.[1]
-
-    let results = launchProcess <| sprintf "changed -t %s %s" transaction repoPath
-    let filePaths = toLines results
+let main args = 
     
-    let hasChanged (t:Change) = t.SvnCode <> NoChange
-    let isValidFile (t:Change) = [".cs";".as"] |> List.exists (fun ext -> t.FileName.EndsWith(ext))
-    let changeHasTabs change = 
-        getFileContents transaction repoPath change.FileName 
-        |> Seq.exists(leadingWhiteSpaceHas tab)
-
-    let found = filePaths 
-                        |> Seq.map createChangeRecord 
-                        |> Seq.filter (fun change -> hasChanged change && isValidFile change) 
-                        |> Seq.choose (fun change -> if changeHasTabs change then Some(change.FileName) else None) 
-                        |> Seq.toList
-    
-    if not <| Seq.isEmpty found then
-        eprintfn "%s" "Change set has files with tabs:\r\n"
-
-        found |> Seq.iter printFileName
-
+    if Array.length args <> 3 then
+        eprintfn "Usage: repoPath transactionId extensions"
+        eprintfn "Extensions should be in the form of \".ext1;.ext2;.ext3;...\""
         1
     else
-        0
+        let repoPath = args.[0]
+        let transaction = args.[1]
+        let extensions = args.[2]
 
+        let results = launchProcess <| sprintf "changed -t %s %s" transaction repoPath
+
+        let filePaths = toLines results
+    
+        let hasChange (t:Change) = t.SvnCode <> NoChange
+
+        let isValidFile (t:Change) = extensions |> splitBy (fun i -> i = ';') |> Seq.exists (fun ext -> t.FileName.EndsWith(ext))
+
+        let hasTabs change = getFileContents transaction repoPath change.FileName |> leadingWhiteSpaceHas tab        
+
+        let applyTo a list = List.map (fun f -> f a) list
+        let forAll list a  = applyTo a list |> List.reduce (&&)
+
+        let found = filePaths 
+                            |> Seq.map createChangeRecord                         
+                            |> Seq.filter (forAll [isValidFile; hasTabs; hasTabs])
+                            |> Seq.map (fun i -> i.FileName)
+                            |> Seq.toList
+    
+
+        if not <| Seq.isEmpty found then
+            eprintfn "%s" "Change set has files with tabs:\r\n"
+
+            found |> Seq.iter printFileName
+
+            1
+        else
+            0
